@@ -25,7 +25,7 @@ class TestSpider(scrapy.Spider):
             url = item.extract()
             if url.startswith("//"):
                 url = "https:" + url
-            yield scrapy.Request(url, cookies=self.my_cookies, callback=self.parse_single_page)
+            yield scrapy.Request(url, callback=self.parse_single_page)
 
     def parse_single_page(self, response):
         items = response.xpath("//li[contains(@class,'list-item')]/div/div/div/h3/a/@href|//div[@class='item']/div[@class='info']/h3/a/@href")
@@ -33,7 +33,7 @@ class TestSpider(scrapy.Spider):
             url = item.extract()
             if url.startswith("//"):
                 url = "https:" + url
-            yield scrapy.Request(url, cookies=self.my_cookies, callback=self.parse_single_goods)
+            yield scrapy.Request(url,  callback=self.parse_single_goods)
 
         # response.xpath("//div[contains(@class,'ui-pagination-navi')]/a[contains(@class,'page-next')]")
         next=response.xpath("//a[contains(@class,'page-next')]/@href").extract()
@@ -42,7 +42,7 @@ class TestSpider(scrapy.Spider):
             url = next[0]
             if url.startswith("//"):
                 url = "https:" + url
-            yield scrapy.Request(url, cookies=self.my_cookies, callback=self.parse_single_page)
+            yield scrapy.Request(url,  callback=self.parse_single_page)
 
 
     def parse_single_goods(self, response):
@@ -59,9 +59,9 @@ class TestSpider(scrapy.Spider):
         item['salesCount'] = response.xpath(
             "//span[@id='j-order-num']/text()").extract()[0].split(" ")[0]
         prices = response.xpath(
-            "//span[@id='j-sku-discount-price']/text()").extract()
+            "//span[@id='j-sku-discount-price']/descendant-or-self::text()").extract()
         if len(prices)!=0:
-            item['price']=prices[0]
+            item['price']="".join(prices)
         else:
             prices = response.xpath(
                 "//span[@id='j-sku-price']/descendant-or-self::text()").extract()
@@ -79,7 +79,8 @@ class TestSpider(scrapy.Spider):
         item['img_urls']=self._values_to_string(images, " || ", lambda x:re.sub(r'_.*?\.jpg', "", x))
         item['url'] = response.url.split("?")[0]
 
-        print(item)
+        # print(item)
+        yield item
 
     def _values_to_string(self, values, slot,fuc=None):
         vs = ""
@@ -101,7 +102,8 @@ class TestSpider(scrapy.Spider):
             print('Error:', e)
 
         if len(self.my_cookies) == 0:
-            driver = webdriver.Firefox()
+            # driver = webdriver.Firefox()
+            driver = webdriver.Chrome()
             driver.get("https://login.aliexpress.com")
             is_login = False
             while not is_login:
