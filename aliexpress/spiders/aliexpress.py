@@ -14,10 +14,16 @@ class AliExpressSpider(scrapy.Spider):
     start_urls = ['https://www.aliexpress.com/all-wholesale-products.html']
     my_cookies = {}
     debug = False
+    _db_pipeline = None
+    max_page_count = 10
+
+    def set_db_pipeline(self, pipeline):
+        self._db_pipeline = pipeline
 
     def start_requests(self):
         self._wait_for_login()
         self.debug = self.settings.getbool("IS_DEBUG", False)
+        self.max_page_count = self.settings.getint("MAX_PAGE_COUNT", 10)
         print("start_requests")
         for url in self.start_urls:
             yield scrapy.Request(url, cookies=self.my_cookies)
@@ -51,7 +57,7 @@ class AliExpressSpider(scrapy.Spider):
             yield request
         else:
             scripts_items = response.xpath("//script/text()")
-            extra_params = self._generate_extra_params(scripts_items)
+            # extra_params = self._generate_extra_params(scripts_items)
             items = response.xpath(
                 "//li[contains(@class,'list-item')]/div/div/div/h3/a/@href|//div[@class='item']/div[@class='info']/h3/a/@href")
 
@@ -61,6 +67,9 @@ class AliExpressSpider(scrapy.Spider):
                 raw_url = item.extract()
                 if raw_url.startswith("//"):
                     raw_url = "https:" + raw_url
+                if self._db_pipeline and self._db_pipeline.check_exist_by_url(raw_url):
+                    print('exist url ignore it:%s' % raw_url)
+                    continue
                 rq = scrapy.Request(raw_url, callback=self.parse_single_goods, priority=10)
                 yield rq
 
@@ -68,7 +77,7 @@ class AliExpressSpider(scrapy.Spider):
                 response.xpath("//div[contains(@class,'ui-pagination-navi')]/a[contains(@class,'page-next')]")
                 next = response.xpath("//a[contains(@class,'page-next')]/@href").extract()
                 curPage = response.xpath("//span[@class='ui-pagination-active']/text()").extract()
-                if len(next) == 1 and len(curPage) == 1 and int(curPage[0]) < 20:
+                if len(next) == 1 and len(curPage) == 1 and int(curPage[0]) <= self.max_page_count:
                     url = next[0]
                     if url.startswith("//"):
                         url = "https:" + url

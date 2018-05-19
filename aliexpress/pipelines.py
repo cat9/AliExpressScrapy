@@ -6,7 +6,7 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 import sqlite3
-
+import threading
 
 class AliexpressPipeline(object):
     collection_name = 'scrapy_items'
@@ -14,9 +14,11 @@ class AliexpressPipeline(object):
     SQL_CHECK = "select count(id) from product where id =?"
     SQL_INSERT = "insert into product(id,category,title,score,salesCount,price,property,img_urls,url) values (?,?,?,?,?,?,?,?,?)"
     SQL_CHECK_NUM = "select count(id) from product"
+    SQL_CHECK_BY_URL = "select count(id) from product where url =?"
     connect = None
     cursor = None
     total = 0
+    thread_lock = threading.Lock()
 
     def __init__(self, db_name):
         self.db_name = db_name
@@ -36,6 +38,7 @@ class AliexpressPipeline(object):
         self.cursor.execute(self.SQL_CHECK_NUM)
         self.total = self.cursor.fetchone()[0]
         print('current size:%d' % self.total)
+        spider.set_db_pipeline(self)
 
     def close_spider(self, spider):
         if self.cursor:
@@ -44,6 +47,7 @@ class AliexpressPipeline(object):
 
     def process_item(self, item, spider):
         try:
+            self.thread_lock.acquire()
             self.cursor.execute(self.SQL_CHECK, (item['id'],))
             if int(self.cursor.fetchone()[0]) == 0:
                 print("not find ,insert it: %s" % (item['id']))
@@ -53,10 +57,18 @@ class AliexpressPipeline(object):
                 self.connect.commit()
 
                 self.total = self.total+1
+                self.thread_lock.release()
                 print('current size:%d' % self.total)
             else:
                 print("find ,ignore it: %s" % (item['id']))
         except Exception as e:
             print(e)
-
         return item
+
+    def check_exist_by_url(self, url):
+        self.thread_lock.acquire()
+        q_url = url.split('?')[0]
+        self.cursor.execute(self.SQL_CHECK_BY_URL, (q_url,))
+        count = self.cursor.fetchone()[0]
+        self.thread_lock.release()
+        return count > 0

@@ -98,4 +98,7 @@ IS_DEBUG = False
 # Chrome:0 FireFox:1
 WEB_DRIVE = 0
 
+# 每个目录最多抓取页数
+MAX_PAGE_COUNT = 5
+
 DB_NAME = 'test.db'
