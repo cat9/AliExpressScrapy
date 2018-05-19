@@ -22,12 +22,12 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 1
+CONCURRENT_REQUESTS = 3
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -46,15 +46,17 @@ DOWNLOAD_DELAY = 2
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-# SPIDER_MIDDLEWARES = {
-#    'aliexpress.middlewares.AliexpressSpiderMiddleware': 543,
-# }
+SPIDER_MIDDLEWARES = {
+   'scrapy.spidermiddlewares.httperror.HttpErrorMiddleware': None,
+   'aliexpress.middlewares.AliexpressHttpErrorMiddleware': 51,
+}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'aliexpress.middlewares.AliexpressDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+   'aliexpress.middlewares.AliexpressRedirectMiddleware': 601,
+   'scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware': None,
+}
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -88,5 +90,12 @@ ITEM_PIPELINES = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+REDIRECT_MAX_TIMES = 1
+CONCURRENT_ITEMS = 1
+IS_DEBUG = False
+
+# Chrome:0 FireFox:1
+WEB_DRIVE = 0
 
 DB_NAME = 'test.db'

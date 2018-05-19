@@ -13,8 +13,10 @@ class AliexpressPipeline(object):
     SQL_TABLE = "create table if not exists product(id integer primary key,category TEXT,title TEXT, score varchar(128), salesCount varchar(128), price varchar(128),property TEXT,img_urls TEXT,url TEXT)"
     SQL_CHECK = "select count(id) from product where id =?"
     SQL_INSERT = "insert into product(id,category,title,score,salesCount,price,property,img_urls,url) values (?,?,?,?,?,?,?,?,?)"
+    SQL_CHECK_NUM = "select count(id) from product"
     connect = None
     cursor = None
+    total = 0
 
     def __init__(self, db_name):
         self.db_name = db_name
@@ -31,6 +33,9 @@ class AliexpressPipeline(object):
         conn.commit()
         self.cursor = conn.cursor()
         self.connect = conn
+        self.cursor.execute(self.SQL_CHECK_NUM)
+        self.total = self.cursor.fetchone()[0]
+        print('current size:%d' % self.total)
 
     def close_spider(self, spider):
         if self.cursor:
@@ -41,14 +46,16 @@ class AliexpressPipeline(object):
         try:
             self.cursor.execute(self.SQL_CHECK, (item['id'],))
             if int(self.cursor.fetchone()[0]) == 0:
-                print("not find ,insert it: %s" % (item['id'],))
+                print("not find ,insert it: %s" % (item['id']))
                 self.cursor.execute(self.SQL_INSERT, (item['id'], item['category'], item['title'], item['score'],
                                                       item['salesCount'], item['price'], item['property'],
                                                       item['img_urls'], item['url']))
                 self.connect.commit()
-                print('row:%d' % (self.cursor.rowcount,))
+
+                self.total = self.total+1
+                print('current size:%d' % self.total)
             else:
-                print("find ,ignore it: %s" % (item['id'],))
+                print("find ,ignore it: %s" % (item['id']))
         except Exception as e:
             print(e)
 
