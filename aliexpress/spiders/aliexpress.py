@@ -16,6 +16,7 @@ class AliExpressSpider(scrapy.Spider):
     debug = False
     _db_pipeline = None
     max_page_count = 10
+    begin_category = None
 
     def set_db_pipeline(self, pipeline):
         self._db_pipeline = pipeline
@@ -24,7 +25,8 @@ class AliExpressSpider(scrapy.Spider):
         self._wait_for_login()
         self.debug = self.settings.getbool("IS_DEBUG", False)
         self.max_page_count = self.settings.getint("MAX_PAGE_COUNT", 10)
-        print("start_requests")
+        self.begin_category = self.settings.get('BEGIN_CATEGORY')
+        print("start_requests,is Debug:", self.debug)
         for url in self.start_urls:
             yield scrapy.Request(url, cookies=self.my_cookies)
 
@@ -38,14 +40,24 @@ class AliExpressSpider(scrapy.Spider):
             yield request
         else:
             items = response.xpath(
-                "//div[@class='sub-item-cont-wrapper']/ul[contains(@class,'sub-item-cont')]/li/a/@href")
+                "//div[@class='sub-item-cont-wrapper']/ul[contains(@class,'sub-item-cont')]/li/a")
             if self.debug:
                 items = items[:2]
+            is_find = False
+            if not self.begin_category:
+                is_find = True
             for item in items:
-                url = item.extract()
-                if url.startswith("//"):
-                    url = "https:" + url
-                yield scrapy.Request(url, callback=self.parse_single_page, priority=1)
+                tx = item.xpath("text()").extract()[0]
+                url = item.xpath("@href").extract()[0]
+                if not is_find:
+                    if self.begin_category == tx:
+                        print('find begin_category:%s' % self.begin_category)
+                        is_find = True
+                if is_find:
+                    # url = item.extract()
+                    if url.startswith("//"):
+                        url = "https:" + url
+                    yield scrapy.Request(url, callback=self.parse_single_page, priority=1)
 
     def parse_single_page(self, response):
         print("AliExpressSpider parse_single_page")

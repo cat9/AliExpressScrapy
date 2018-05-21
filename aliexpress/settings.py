@@ -101,4 +101,6 @@ WEB_DRIVE = 0
 # 每个目录最多抓取页数
 MAX_PAGE_COUNT = 5
 
+# BEGIN_CATEGORY = 'Outdoor Lighting'
+
 DB_NAME = 'test.db'
