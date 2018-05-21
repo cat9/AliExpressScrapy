@@ -55,14 +55,14 @@ class AliexpressPipeline(object):
                                                       item['salesCount'], item['price'], item['property'],
                                                       item['img_urls'], item['url']))
                 self.connect.commit()
-
                 self.total = self.total+1
-                self.thread_lock.release()
                 print('current size:%d' % self.total)
             else:
                 print("find ,ignore it: %s" % (item['id']))
         except Exception as e:
             print(e)
+        finally:
+            self.thread_lock.release()
         return item
 
     def check_exist_by_url(self, url):
