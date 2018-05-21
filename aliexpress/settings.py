@@ -101,6 +101,9 @@ WEB_DRIVE = 0
 # 每个目录最多抓取页数
 MAX_PAGE_COUNT = 5
 
+# 开始目录
 # BEGIN_CATEGORY = 'Outdoor Lighting'
+# 结束目录
+# END_CATEGORY = 'Passive Components'
 
 DB_NAME = 'test.db'

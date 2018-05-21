@@ -17,6 +17,7 @@ class AliExpressSpider(scrapy.Spider):
     _db_pipeline = None
     max_page_count = 10
     begin_category = None
+    end_category = None
 
     def set_db_pipeline(self, pipeline):
         self._db_pipeline = pipeline
@@ -26,6 +27,7 @@ class AliExpressSpider(scrapy.Spider):
         self.debug = self.settings.getbool("IS_DEBUG", False)
         self.max_page_count = self.settings.getint("MAX_PAGE_COUNT", 10)
         self.begin_category = self.settings.get('BEGIN_CATEGORY')
+        self.end_category = self.settings.get('END_CATEGORY')
         print("start_requests,is Debug:", self.debug)
         for url in self.start_urls:
             yield scrapy.Request(url, cookies=self.my_cookies)
@@ -43,17 +45,20 @@ class AliExpressSpider(scrapy.Spider):
                 "//div[@class='sub-item-cont-wrapper']/ul[contains(@class,'sub-item-cont')]/li/a")
             if self.debug:
                 items = items[:2]
-            is_find = False
+            is_find_begin = False
             if not self.begin_category:
-                is_find = True
+                is_find_begin = True
+            is_find_end = False
             for item in items:
                 tx = item.xpath("text()").extract()[0]
                 url = item.xpath("@href").extract()[0]
-                if not is_find:
+                if not is_find_begin:
                     if self.begin_category == tx:
                         print('find begin_category:%s' % self.begin_category)
-                        is_find = True
-                if is_find:
+                        is_find_begin = True
+                    if self.end_category and self.end_category == tx:
+                        is_find_end = True
+                if not is_find_end and is_find_begin:
                     # url = item.extract()
                     if url.startswith("//"):
                         url = "https:" + url
