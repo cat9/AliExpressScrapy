@@ -16,6 +16,7 @@ class AliexpressItem(scrapy.Item):
     score = scrapy.Field()
     salesCount = scrapy.Field()
     price = scrapy.Field()
+    skus = scrapy.Field()
     property = scrapy.Field()
     img_urls = scrapy.Field()
     url = scrapy.Field()

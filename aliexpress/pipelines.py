@@ -10,6 +10,7 @@ import sqlite3
 import threading
 import os
 import shutil
+import re
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exceptions import DropItem
 
@@ -34,8 +35,15 @@ class AliexpressImagesPipeline(ImagesPipeline):
         image_urls = [x['url'] for ok, x in results if ok]
         if not image_paths:
             raise DropItem("Item contains no images")
-        item_dir = os.path.join(self.current_dir, '"'+item['category'].replace(r'[>\s\']', '_')+'"', item['id'])
-        os.makedirs(item_dir)
+
+        category = re.sub(r'[>\s\']', '_', item['category'])
+
+        item_dir = os.path.join(self.current_dir, category, item['id'])
+        try:
+            os.makedirs(item_dir)
+        except Exception as err:
+            print(err)
+
         for image in image_paths:
             image_path = os.path.join(self.store.basedir, image.replace('/', '\\'))
             move_to = os.path.join(item_dir, os.path.basename(image_path))
@@ -45,9 +53,9 @@ class AliexpressImagesPipeline(ImagesPipeline):
 
 class AliexpressPipeline(object):
     collection_name = 'scrapy_items'
-    SQL_TABLE = "create table if not exists product(id integer primary key,category TEXT,title TEXT, score varchar(128), salesCount varchar(128), price varchar(128),property TEXT,img_urls TEXT,url TEXT)"
+    SQL_TABLE = "create table if not exists product(id integer primary key,category TEXT,title TEXT, score varchar(128), salesCount varchar(128), price varchar(128),skus TEXT,property TEXT,img_urls TEXT,url TEXT)"
     SQL_CHECK = "select count(id) from product where id =?"
-    SQL_INSERT = "insert into product(id,category,title,score,salesCount,price,property,img_urls,url) values (?,?,?,?,?,?,?,?,?)"
+    SQL_INSERT = "insert into product(id,category,title,score,salesCount,price,skus,property,img_urls,url) values (?,?,?,?,?,?,?,?,?,?)"
     SQL_CHECK_NUM = "select count(id) from product"
     SQL_CHECK_BY_URL = "select count(id) from product where url =?"
     connect = None
@@ -87,7 +95,7 @@ class AliexpressPipeline(object):
             if int(self.cursor.fetchone()[0]) == 0:
                 print("not find ,insert it: %s" % (item['id']))
                 self.cursor.execute(self.SQL_INSERT, (item['id'], item['category'], item['title'], item['score'],
-                                                      item['salesCount'], item['price'], item['property'],
+                                                      item['salesCount'], item['price'], item['skus'], item['property'],
                                                       item['img_urls'], item['url']))
                 self.connect.commit()
                 self.total = self.total+1

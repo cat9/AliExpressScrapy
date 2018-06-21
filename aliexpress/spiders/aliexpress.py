@@ -123,6 +123,14 @@ class AliExpressSpider(scrapy.Spider):
                 prices = response.xpath(
                     "//span[@id='j-sku-price']/descendant-or-self::text()").extract()
                 item['price'] = "".join(prices)
+
+            sku_items = response.xpath("//div[@id='j-product-info-sku']/dl[@class='p-property-item']")
+            skus = []
+            for sku_item in sku_items:
+                sku_item_name=sku_item.xpath("dt[@class='p-item-title']/text()").extract()[0]
+                sku_item_values=sku_item.xpath("//ul[contains(@class,'sku-attr-list')]/li/a/descendant-or-self::text()").extract()
+                skus.append(sku_item_name+'['+','.join(sku_item_values)+']')
+            item['skus'] = ' || '.join(skus)
             properties_items = response.xpath(
                 "//ul[contains(@class,'product-property-list')]/li[@class='property-item']")
             properties = []
