@@ -5,8 +5,43 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import scrapy
 import sqlite3
 import threading
+import os
+import shutil
+from scrapy.pipelines.images import ImagesPipeline
+from scrapy.exceptions import DropItem
+
+# item['id'], item['category'], item['title'], item['score'],
+# item['salesCount'], item['price'], item['property'],
+# item['img_urls'], item['url']
+
+class AliexpressImagesPipeline(ImagesPipeline):
+    current_dir = ''
+    def __init__(self, store_uri, download_func=None, settings=None):
+        super().__init__(store_uri, download_func, settings)
+        self.current_dir=os.getcwd()+r'\images'
+
+    def get_media_requests(self, item, info):
+        if item['img_urls']:
+            images = item['img_urls'].split(' || ')
+            for image in images:
+                yield scrapy.Request(image, priority=15)
+
+    def item_completed(self, results, item, info):
+        image_paths = [x['path'] for ok, x in results if ok]
+        image_urls = [x['url'] for ok, x in results if ok]
+        if not image_paths:
+            raise DropItem("Item contains no images")
+        item_dir = os.path.join(self.current_dir, '"'+item['category'].replace(r'[>\s\']', '_')+'"', item['id'])
+        os.makedirs(item_dir)
+        for image in image_paths:
+            image_path = os.path.join(self.store.basedir, image.replace('/', '\\'))
+            move_to = os.path.join(item_dir, os.path.basename(image_path))
+            shutil.move(image_path, move_to)
+
+        return item
 
 class AliexpressPipeline(object):
     collection_name = 'scrapy_items'

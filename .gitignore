@@ -106,3 +106,4 @@ venv.bak/
 .idea/
 cookies.txt
 test.db
+tmp/

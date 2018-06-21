@@ -67,6 +67,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
+   'aliexpress.pipelines.AliexpressImagesPipeline': 297,
    'aliexpress.pipelines.AliexpressPipeline': 300,
 }
 
@@ -91,12 +92,15 @@ ITEM_PIPELINES = {
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
+MEDIA_ALLOW_REDIRECTS = True
+REDIRECT_ENABLED = True
 REDIRECT_MAX_TIMES = 1
+DOWNLOAD_WARNSIZE = 0
 CONCURRENT_ITEMS = 1
 IS_DEBUG = False
 
 # Chrome:0 FireFox:1
-WEB_DRIVE = 0
+WEB_DRIVE = 1
 
 # 每个目录最多抓取页数
 MAX_PAGE_COUNT = 5
@@ -107,3 +111,4 @@ MAX_PAGE_COUNT = 5
 # END_CATEGORY = 'Passive Components'
 
 DB_NAME = 'test.db'
+IMAGES_STORE = r'F:\python\xxhu\files\images'
